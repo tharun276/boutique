@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ma Boutique Beauté</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; color: #1a1a1a; }
+
+  /* AUTH */
+  #auth-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 1rem; }
+  .auth-card { background: white; border-radius: 16px; padding: 2rem; width: 100%; max-width: 380px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+  .auth-card h1 { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+  .auth-card p { font-size: 14px; color: #666; margin-bottom: 1.5rem; }
+  .auth-tabs { display: flex; gap: 8px; margin-bottom: 1.5rem; }
+  .auth-tab { flex: 1; padding: 8px; border: 1px solid #e0e0e0; border-radius: 8px; cursor: pointer; font-size: 13px; background: white; color: #666; text-align: center; }
+  .auth-tab.active { background: #1a1a1a; color: white; border-color: #1a1a1a; }
+
+  /* LAYOUT */
+  #app-screen { display: none; min-height: 100vh; }
+  .topbar { background: white; border-bottom: 1px solid #eee; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .topbar-title { font-size: 16px; font-weight: 600; }
+  .topbar-user { font-size: 12px; color: #666; }
+  .nav { background: white; border-bottom: 1px solid #eee; display: flex; overflow-x: auto; padding: 0 12px; }
+  .nav-item { padding: 12px 16px; font-size: 13px; cursor: pointer; white-space: nowrap; color: #666; border-bottom: 2px solid transparent; }
+  .nav-item.active { color: #1a1a1a; border-bottom-color: #1a1a1a; font-weight: 500; }
+  .content { padding: 1.5rem; max-width: 900px; margin: 0 auto; }
+
+  /* FORMS */
+  label { font-size: 13px; color: #555; display: block; margin-bottom: 4px; margin-top: 12px; }
+  input, select, textarea { width: 100%; padding: 10px 12px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: white; color: #1a1a1a; outline: none; }
+  input:focus, select:focus { border-color: #1a1a1a; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+
+  /* BUTTONS */
+  .btn { padding: 10px 18px; border-radius: 8px; border: 1px solid #e0e0e0; cursor: pointer; font-size: 14px; font-weight: 500; background: white; color: #1a1a1a; transition: opacity .15s; }
+  .btn:hover { opacity: .85; }
+  .btn-dark { background: #1a1a1a; color: white; border-color: #1a1a1a; }
+  .btn-red { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
+  .btn-green { background: #dcfce7; color: #15803d; border-color: #86efac; }
+  .btn-blue { background: #eff6ff; color: #1d4ed8; border-color: #93c5fd; }
+  .btn-wa { background: #25D366; color: white; border-color: #25D366; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+  /* CARDS */
+  .card { background: white; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; border: 1px solid #eee; }
+  .card h3 { font-size: 15px; font-weight: 600; margin-bottom: 1rem; }
+  .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap: 12px; margin-bottom: 1rem; }
+  .metric { background: #f9f9f9; border-radius: 10px; padding: 1rem; }
+  .metric-label { font-size: 12px; color: #888; margin-bottom: 4px; }
+  .metric-value { font-size: 22px; font-weight: 600; }
+
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 8px 10px; border-bottom: 1px solid #eee; color: #888; font-weight: 500; }
+  td { padding: 10px; border-bottom: 1px solid #f5f5f5; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+
+  /* BADGES */
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 11px; font-weight: 500; }
+  .badge-green { background: #dcfce7; color: #15803d; }
+  .badge-red { background: #fee2e2; color: #b91c1c; }
+  .badge-yellow { background: #fef9c3; color: #a16207; }
+  .badge-blue { background: #eff6ff; color: #1d4ed8; }
+  .badge-purple { background: #f3e8ff; color: #7e22ce; }
+
+  /* LIVREUR */
+  .livr-card { background: white; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; border: 1px solid #eee; }
+  .livr-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+  .livr-client { font-size: 16px; font-weight: 600; }
+  .livr-gain { font-size: 15px; font-weight: 600; color: #15803d; }
+  .livr-info { font-size: 13px; color: #555; line-height: 1.8; }
+  .livr-badge { display: inline-block; background: #f5f5f5; border-radius: 8px; padding: 6px 12px; font-size: 13px; margin: 4px 4px 0 0; }
+
+  /* MISC */
+  .sep { border: none; border-top: 1px solid #eee; margin: 1rem 0; }
+  .msg-preview { background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 12px; font-size: 13px; line-height: 1.7; white-space: pre-wrap; }
+  .alert { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 8px; }
+  .alert-yellow { background: #fef9c3; color: #a16207; }
+  .alert-red { background: #fee2e2; color: #b91c1c; }
+  .empty { text-align: center; padding: 2rem; color: #aaa; font-size: 14px; }
+  .row-actions { display: flex; gap: 6px; }
+  .section { display: none; }
+  .section.active { display: block; }
+  #toast { position: fixed; bottom: 20px; right: 20px; background: #1a1a1a; color: white; padding: 12px 20px; border-radius: 10px; font-size: 14px; display: none; z-index: 999; }
+  .spinner { text-align: center; padding: 2rem; color: #aaa; }
+  @media(max-width:600px) { .grid2,.grid3 { grid-template-columns:1fr; } .content { padding: 1rem; } }
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <h1>🌸 Boutique Beauté</h1>
+    <p>Connecte-toi à ton espace</p>
+    <div class="auth-tabs">
+      <div class="auth-tab active" onclick="switchAuthTab('login')">Connexion</div>
+      <div class="auth-tab" onclick="switchAuthTab('register')">Créer un compte</div>
+    </div>
+    <div id="login-form">
+      <label>Email</label><input id="login-email" type="email" placeholder="ton@email.com">
+      <label>Mot de passe</label><input id="login-pass" type="password" placeholder="••••••••">
+      <button class="btn btn-dark" style="width:100%;margin-top:16px;" onclick="login()">Se connecter</button>
+      <p id="login-err" style="color:#b91c1c;font-size:12px;margin-top:8px;"></p>
+    </div>
+    <div id="register-form" style="display:none;">
+      <label>Ton prénom/nom</label><input id="reg-name" placeholder="Fatima B.">
+      <label>Email</label><input id="reg-email" type="email" placeholder="ton@email.com">
+      <label>Mot de passe</label><input id="reg-pass" type="password" placeholder="min. 6 caractères">
+      <label>Tu es ?</label>
+      <select id="reg-role">
+        <option value="admin">Propriétaire (moi)</option>
+        <option value="livreur">Livreur</option>
+      </select>
+      <button class="btn btn-dark" style="width:100%;margin-top:16px;" onclick="register()">Créer mon compte</button>
+      <p id="reg-err" style="color:#b91c1c;font-size:12px;margin-top:8px;"></p>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen">
+  <div class="topbar">
+    <div class="topbar-title" id="topbar-title">Ma Boutique</div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span class="topbar-user" id="topbar-user"></span>
+      <button class="btn btn-sm" onclick="logout()">Déconnexion</button>
+    </div>
+  </div>
+
+  <!-- NAV ADMIN -->
+  <div class="nav" id="admin-nav" style="display:none;">
+    <div class="nav-item active" onclick="showSection('dashboard')">📊 Dashboard</div>
+    <div class="nav-item" onclick="showSection('produits')">📦 Produits</div>
+    <div class="nav-item" onclick="showSection('clients')">👥 Clients</div>
+    <div class="nav-item" onclick="showSection('ventes')">🛒 Vente</div>
+    <div class="nav-item" onclick="showSection('livraisons')">🚗 Livraisons</div>
+    <div class="nav-item" onclick="showSection('alertes')">🔔 Alertes</div>
+  </div>
+
+  <!-- NAV LIVREUR -->
+  <div class="nav" id="livreur-nav" style="display:none;">
+    <div class="nav-item active" onclick="showSection('mes-livraisons')">📦 Mes livraisons</div>
+    <div class="nav-item" onclick="showSection('mon-gain')">💰 Mon gain</div>
+  </div>
+
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div id="section-dashboard" class="section active">
+      <div class="metric-grid" id="dash-metrics"></div>
+      <div class="card"><h3>⚠️ Stock bas</h3><div id="dash-stock"></div></div>
+      <div class="card"><h3>📋 Dernières ventes</h3><div id="dash-ventes"></div></div>
+    </div>
+
+    <!-- PRODUITS -->
+    <div id="section-produits" class="section">
+      <div class="card">
+        <h3>Ajouter un produit</h3>
+        <div class="grid2">
+          <div><label>Nom</label><input id="p-nom" placeholder="Crème hydratante"></div>
+          <div><label>Prix vente (€)</label><input id="p-prix" type="number" step="0.01"></div>
+        </div>
+        <div class="grid2">
+          <div><label>Prix achat (€)</label><input id="p-achat" type="number" step="0.01"></div>
+          <div><label>Stock actuel</label><input id="p-stock" type="number"></div>
+        </div>
+        <div class="grid2">
+          <div><label>Durée utilisation (jours)</label><input id="p-duree" type="number" placeholder="30"></div>
+          <div><label>Alerte stock bas</label><input id="p-alerte" type="number" placeholder="3"></div>
+        </div>
+        <button class="btn btn-dark" style="margin-top:14px;" onclick="addProduit()">Ajouter</button>
+      </div>
+      <div class="card"><h3>Mes produits</h3><div id="produits-list"></div></div>
+    </div>
+
+    <!-- CLIENTS -->
+    <div id="section-clients" class="section">
+      <div class="card">
+        <h3>Ajouter un client</h3>
+        <div class="grid2">
+          <div><label>Nom</label><input id="c-nom" placeholder="Fatima B."></div>
+          <div><label>Téléphone (WhatsApp)</label><input id="c-tel" placeholder="06XXXXXXXX"></div>
+        </div>
+        <div><label>Adresse de livraison</label><input id="c-adresse" placeholder="12 rue des Lilas, 93140 Bondy"></div>
+        <button class="btn btn-dark" style="margin-top:14px;" onclick="addClient()">Ajouter</button>
+      </div>
+      <div class="card"><h3>Mes clients</h3><div id="clients-list"></div></div>
+    </div>
+
+    <!-- VENTES -->
+    <div id="section-ventes" class="section">
+      <div class="card">
+        <h3>Nouvelle vente</h3>
+        <div class="grid2">
+          <div><label>Client</label><select id="v-client"><option value="">Sélectionner...</option></select></div>
+          <div><label>Type</label><select id="v-type"><option value="normal">Sur place</option><option value="livraison">Livraison</option></select></div>
+        </div>
+        <hr class="sep">
+        <p style="font-size:13px;font-weight:500;margin-bottom:10px;">Produits vendus</p>
+        <div id="vente-items"></div>
+        <button class="btn" style="margin-top:8px;" onclick="addVenteItem()">+ Ajouter produit</button>
+        <hr class="sep">
+        <div id="vente-recap" style="display:none;background:#f9f9f9;border-radius:10px;padding:1rem;margin-bottom:1rem;">
+          <div id="recap-lines"></div>
+          <hr class="sep">
+          <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:600;">
+            <span>Total</span><span id="recap-total">0 €</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;color:#666;margin-top:4px;">
+            <span>Bénéfice</span><span id="recap-benef" style="color:#15803d;font-weight:500;">0 €</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn" onclick="calculerVente()">Calculer</button>
+          <button class="btn btn-dark" onclick="validerVente()">✅ Valider la vente</button>
+        </div>
+      </div>
+      <div class="card"><h3>Historique des ventes</h3><div id="ventes-list"></div></div>
+    </div>
+
+    <!-- LIVRAISONS ADMIN -->
+    <div id="section-livraisons" class="section">
+      <div class="card">
+        <h3>Livraisons en attente</h3>
+        <div id="livraisons-admin"></div>
+      </div>
+    </div>
+
+    <!-- ALERTES -->
+    <div id="section-alertes" class="section">
+      <div class="card">
+        <h3>🔔 Clients à recontacter</h3>
+        <p style="font-size:13px;color:#888;margin-bottom:1rem;">Produits arrivant bientôt à la fin selon la durée d'utilisation.</p>
+        <div id="alertes-list"></div>
+      </div>
+    </div>
+
+    <!-- MES LIVRAISONS (livreur) -->
+    <div id="section-mes-livraisons" class="section">
+      <h3 style="margin-bottom:1rem;">Mes livraisons à faire</h3>
+      <div id="livreur-livraisons"></div>
+    </div>
+
+    <!-- MON GAIN (livreur) -->
+    <div id="section-mon-gain" class="section">
+      <div class="card">
+        <h3>Mes gains</h3>
+        <div id="livreur-gains"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ====== CONFIG SUPABASE ======
+// REMPLACE CES DEUX VALEURS PAR TES VRAIES CLES SUPABASE
+const SUPABASE_URL = 'https://siarqcokxcpieqfmkkze.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_wOGNiPYFPHBOen2HUm8GBA_z5XESr_J';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentUser = null;
+let currentRole = null;
+let currentName = null;
+let produits = [], clients = [], ventes = [], livraisons = [];
+let venteItems = [];
+
+// ====== AUTH ======
+function switchAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (tab==='login'&&i===0)||(tab==='register'&&i===1)));
+  document.getElementById('login-form').style.display = tab === 'login' ? 'block' : 'none';
+  document.getElementById('register-form').style.display = tab === 'register' ? 'block' : 'none';
+}
+
+async function login() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+  if (error) { document.getElementById('login-err').textContent = 'Email ou mot de passe incorrect.'; return; }
+}
+
+async function register() {
+  const name = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const pass = document.getElementById('reg-pass').value;
+  const role = document.getElementById('reg-role').value;
+  if (!name || !email || !pass) { document.getElementById('reg-err').textContent = 'Remplis tous les champs.'; return; }
+  const { data, error } = await sb.auth.signUp({ email, password: pass, options: { data: { name, role } } });
+  if (error) { document.getElementById('reg-err').textContent = error.message; return; }
+  await sb.from('profiles').upsert({ id: data.user.id, name, role, email });
+  toast('Compte créé ! Connecte-toi maintenant.');
+  switchAuthTab('login');
+}
+
+async function logout() {
+  await sb.auth.signOut();
+  location.reload();
+}
+
+sb.auth.onAuthStateChange(async (event, session) => {
+  if (session) {
+    currentUser = session.user;
+    const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+    currentRole = profile?.role || 'admin';
+    currentName = profile?.name || currentUser.email;
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('app-screen').style.display = 'block';
+    document.getElementById('topbar-user').textContent = currentName;
+    if (currentRole === 'admin') {
+      document.getElementById('admin-nav').style.display = 'flex';
+      await loadAll();
+      showSection('dashboard');
+    } else {
+      document.getElementById('livreur-nav').style.display = 'flex';
+      await loadLivraisonsLivreur();
+      showSection('mes-livraisons');
+    }
+  }
+});
+
+// ====== NAVIGATION ======
+function showSection(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('section-' + name).classList.add('active');
+  const navItems = document.querySelectorAll('.nav-item');
+  navItems.forEach(n => { if (n.getAttribute('onclick').includes(name)) n.classList.add('active'); });
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'produits') renderProduits();
+  if (name === 'clients') renderClients();
+  if (name === 'ventes') { renderVentes(); updateVenteSelects(); }
+  if (name === 'livraisons') renderLivraisonsAdmin();
+  if (name === 'alertes') renderAlertes();
+  if (name === 'mes-livraisons') loadLivraisonsLivreur();
+  if (name === 'mon-gain') renderGainLivreur();
+}
+
+// ====== LOAD DATA ======
+async function loadAll() {
+  const [p, c, v, l] = await Promise.all([
+    sb.from('produits').select('*').order('nom'),
+    sb.from('clients').select('*').order('nom'),
+    sb.from('ventes').select('*').order('created_at', { ascending: false }),
+    sb.from('livraisons').select('*').order('created_at', { ascending: false })
+  ]);
+  produits = p.data || [];
+  clients = c.data || [];
+  ventes = v.data || [];
+  livraisons = l.data || [];
+}
+
+// ====== PRODUITS ======
+async function addProduit() {
+  const nom = document.getElementById('p-nom').value.trim();
+  const prix = parseFloat(document.getElementById('p-prix').value);
+  const achat = parseFloat(document.getElementById('p-achat').value) || 0;
+  const stock = parseInt(document.getElementById('p-stock').value) || 0;
+  const duree = parseInt(document.getElementById('p-duree').value) || 30;
+  const alerte = parseInt(document.getElementById('p-alerte').value) || 3;
+  if (!nom || !prix) return toast('Remplis le nom et le prix !');
+  const { error } = await sb.from('produits').insert({ nom, prix, achat, stock, duree, alerte });
+  if (error) return toast('Erreur: ' + error.message);
+  ['p-nom','p-prix','p-achat','p-stock','p-duree','p-alerte'].forEach(id => document.getElementById(id).value = '');
+  await loadAll(); renderProduits(); renderDashboard();
+  toast('Produit ajouté !');
+}
+
+function renderProduits() {
+  const el = document.getElementById('produits-list');
+  if (!produits.length) { el.innerHTML = '<div class="empty">Aucun produit. Ajoute ton premier produit !</div>'; return; }
+  el.innerHTML = `<table>
+    <thead><tr><th>Produit</th><th>Prix vente</th><th>Marge</th><th>Stock</th><th>Durée</th><th></th></tr></thead>
+    <tbody>${produits.map(p => {
+      const marge = (p.prix - p.achat).toFixed(2);
+      const stockBadge = p.stock <= p.alerte ? `<span class="badge badge-red">Stock bas</span>` : p.stock <= p.alerte*2 ? `<span class="badge badge-yellow">Attention</span>` : `<span class="badge badge-green">OK</span>`;
+      return `<tr>
+        <td><strong>${p.nom}</strong></td>
+        <td>${p.prix.toFixed(2)} €</td>
+        <td style="color:#15803d">+${marge} €</td>
+        <td>${p.stock} ${stockBadge}</td>
+        <td>${p.duree}j</td>
+        <td><div class="row-actions">
+          <button class="btn btn-sm btn-red" onclick="deleteProduit('${p.id}')">Suppr</button>
+        </div></td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
+}
+
+async function deleteProduit(id) {
+  if (!confirm('Supprimer ce produit ?')) return;
+  await sb.from('produits').delete().eq('id', id);
+  await loadAll(); renderProduits(); renderDashboard();
+  toast('Produit supprimé.');
+}
+
+// ====== CLIENTS ======
+async function addClient() {
+  const nom = document.getElementById('c-nom').value.trim();
+  const tel = document.getElementById('c-tel').value.trim();
+  const adresse = document.getElementById('c-adresse').value.trim();
+  if (!nom || !tel) return toast('Remplis nom et téléphone !');
+  const { error } = await sb.from('clients').insert({ nom, tel, adresse });
+  if (error) return toast('Erreur: ' + error.message);
+  ['c-nom','c-tel','c-adresse'].forEach(id => document.getElementById(id).value = '');
+  await loadAll(); renderClients(); updateVenteSelects();
+  toast('Client ajouté !');
+}
+
+function renderClients() {
+  const el = document.getElementById('clients-list');
+  if (!clients.length) { el.innerHTML = '<div class="empty">Aucun client encore.</div>'; return; }
+  el.innerHTML = `<table>
+    <thead><tr><th>Nom</th><th>Téléphone</th><th>Adresse</th><th>Total achats</th><th>WhatsApp</th></tr></thead>
+    <tbody>${clients.map(c => {
+      const totalAchats = ventes.filter(v => v.client_id === c.id).reduce((a,v) => a + v.total, 0);
+      const waUrl = `https://wa.me/${c.tel.replace(/\s/g,'').replace(/^0/,'33')}`;
+      return `<tr>
+        <td><strong>${c.nom}</strong></td>
+        <td>${c.tel}</td>
+        <td style="font-size:12px;color:#666">${c.adresse || '—'}</td>
+        <td>${totalAchats.toFixed(2)} €</td>
+        <td><a href="${waUrl}" target="_blank" class="btn btn-sm btn-wa">💬 WA</a></td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
+}
+
+// ====== VENTES ======
+function updateVenteSelects() {
+  const sel = document.getElementById('v-client');
+  const val = sel.value;
+  sel.innerHTML = '<option value="">Sélectionner...</option>' + clients.map(c => `<option value="${c.id}">${c.nom}</option>`).join('');
+  sel.value = val;
+  if (!venteItems.length) venteItems = [{ produitId: '', qte: 1, promo: 0 }];
+  renderVenteItems();
+}
+
+function addVenteItem() { venteItems.push({ produitId: '', qte: 1, promo: 0 }); renderVenteItems(); }
+
+function renderVenteItems() {
+  document.getElementById('vente-items').innerHTML = venteItems.map((item, i) => `
+    <div style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px;align-items:end;margin-bottom:8px;">
+      <div><label>Produit</label>
+        <select onchange="venteItems[${i}].produitId=this.value">
+          <option value="">Choisir...</option>
+          ${produits.map(p => `<option value="${p.id}" ${item.produitId==p.id?'selected':''}>${p.nom} (${p.prix}€)</option>`).join('')}
+        </select>
+      </div>
+      <div><label>Qté</label><input type="number" min="1" value="${item.qte}" onchange="venteItems[${i}].qte=parseInt(this.value)||1"></div>
+      <div><label>Promo %</label><input type="number" min="0" max="100" value="${item.promo}" onchange="venteItems[${i}].promo=parseFloat(this.value)||0"></div>
+      <button class="btn btn-sm btn-red" onclick="venteItems.splice(${i},1);renderVenteItems();" style="margin-bottom:1px;">✕</button>
+    </div>`).join('');
+}
+
+function calculerVente() {
+  let total = 0, benef = 0, lines = '';
+  for (const item of venteItems) {
+    const p = produits.find(x => x.id === item.produitId);
+    if (!p) continue;
+    const base = p.prix * item.qte;
+    const remise = base * item.promo / 100;
+    const final = base - remise;
+    benef += final - p.achat * item.qte;
+    total += final;
+    lines += `<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;">
+      <span>${p.nom} x${item.qte}${item.promo>0?` <span class="badge badge-yellow">-${item.promo}%</span>`:''}</span>
+      <span>${final.toFixed(2)} €</span>
+    </div>`;
+  }
+  document.getElementById('recap-lines').innerHTML = lines;
+  document.getElementById('recap-total').textContent = total.toFixed(2) + ' €';
+  document.getElementById('recap-benef').textContent = '+' + benef.toFixed(2) + ' €';
+  document.getElementById('vente-recap').style.display = 'block';
+  window._venteTotal = total;
+  window._venteBenef = benef;
+}
+
+async function validerVente() {
+  if (window._venteTotal === undefined) calculerVente();
+  const clientId = document.getElementById('v-client').value;
+  const type = document.getElementById('v-type').value;
+  if (!clientId) return toast('Sélectionne un client !');
+  const client = clients.find(c => c.id === clientId);
+  const itemsValides = venteItems.filter(i => i.produitId).map(i => {
+    const p = produits.find(x => x.id === i.produitId);
+    return { produit_id: i.produitId, nom: p.nom, qte: i.qte, promo: i.promo, prix_unitaire: p.prix, duree: p.duree };
+  });
+  if (!itemsValides.length) return toast('Ajoute au moins un produit !');
+
+  const { data: vente, error } = await sb.from('ventes').insert({
+    client_id: clientId, client_nom: client.nom, type,
+    total: window._venteTotal, benef: window._venteBenef,
+    produits: JSON.stringify(itemsValides)
+  }).select().single();
+  if (error) return toast('Erreur: ' + error.message);
+
+  for (const item of itemsValides) {
+    const p = produits.find(x => x.id === item.produit_id);
+    await sb.from('produits').update({ stock: Math.max(0, p.stock - item.qte) }).eq('id', p.id);
+  }
+
+  if (type === 'livraison') {
+    await sb.from('livraisons').insert({
+      vente_id: vente.id, client_id: clientId, client_nom: client.nom,
+      client_tel: client.tel, client_adresse: client.adresse || 'Adresse non renseignée',
+      produits: JSON.stringify(itemsValides),
+      total: window._venteTotal,
+      nb_produits: itemsValides.reduce((a,b) => a + b.qte, 0),
+      statut: 'en_attente', livreur_id: null
+    });
+  }
+
+  window._venteTotal = undefined; window._venteBenef = undefined;
+  venteItems = [{ produitId: '', qte: 1, promo: 0 }];
+  document.getElementById('vente-recap').style.display = 'none';
+  await loadAll(); renderVentes(); renderVenteItems(); renderDashboard();
+  toast('Vente validée !');
+}
+
+function renderVentes() {
+  const el = document.getElementById('ventes-list');
+  if (!ventes.length) { el.innerHTML = '<div class="empty">Aucune vente encore.</div>'; return; }
+  el.innerHTML = `<table>
+    <thead><tr><th>Date</th><th>Client</th><th>Produits</th><th>Total</th><th>Bénéfice</th><th>Type</th></tr></thead>
+    <tbody>${ventes.slice(0,20).map(v => {
+      const prods = JSON.parse(v.produits || '[]');
+      const badge = v.type === 'livraison' ? `<span class="badge badge-blue">Livraison</span>` : `<span class="badge badge-green">Sur place</span>`;
+      return `<tr>
+        <td style="font-size:12px;color:#666">${new Date(v.created_at).toLocaleDateString('fr-FR')}</td>
+        <td>${v.client_nom}</td>
+        <td style="font-size:12px">${prods.map(p=>p.nom+' x'+p.qte).join(', ')}</td>
+        <td><strong>${v.total.toFixed(2)} €</strong></td>
+        <td style="color:#15803d">+${v.benef.toFixed(2)} €</td>
+        <td>${badge}</td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
+}
+
+// ====== LIVRAISONS ADMIN ======
+async function renderLivraisonsAdmin() {
+  const { data: livrs } = await sb.from('livraisons').select('*').eq('statut','en_attente').order('created_at', { ascending: false });
+  const el = document.getElementById('livraisons-admin');
+  if (!livrs || !livrs.length) { el.innerHTML = '<div class="empty">Aucune livraison en attente.</div>'; return; }
+
+  const { data: livreurs } = await sb.from('profiles').select('*').eq('role','livreur');
+
+  el.innerHTML = livrs.map(l => {
+    const prods = JSON.parse(l.produits || '[]');
+    const gain = l.nb_produits * 2;
+    const livreurOptions = (livreurs||[]).map(lv => `<option value="${lv.id}">${lv.name}</option>`).join('');
+    return `<div class="livr-card">
+      <div class="livr-header">
+        <div>
+          <div class="livr-client">👤 ${l.client_nom}</div>
+          <div style="font-size:13px;color:#666;margin-top:2px;">📞 ${l.client_tel}</div>
+          <div style="font-size:13px;color:#666;">📍 ${l.client_adresse}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:15px;font-weight:600;">${l.total.toFixed(2)} €</div>
+          <div style="font-size:12px;color:#888;">à encaisser</div>
+        </div>
+      </div>
+      <div style="margin-bottom:10px;">${prods.map(p=>`<span class="livr-badge">📦 ${p.nom} x${p.qte}</span>`).join('')}</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <select id="livreur-sel-${l.id}" style="flex:1;min-width:160px;">
+          <option value="">Assigner un livreur...</option>
+          ${livreurOptions}
+        </select>
+        <button class="btn btn-blue" onclick="assignerLivreur('${l.id}')">Assigner</button>
+        <button class="btn btn-green" onclick="marquerLivre('${l.id}')">✅ Livré</button>
+      </div>
+      <div id="wa-msg-${l.id}" style="display:none;margin-top:10px;"></div>
+    </div>`;
+  }).join('');
+}
+
+async function assignerLivreur(livraisonId) {
+  const livreurId = document.getElementById(`livreur-sel-${livraisonId}`).value;
+  if (!livreurId) return toast('Sélectionne un livreur !');
+  const { data: livreur } = await sb.from('profiles').select('*').eq('id', livreurId).single();
+  const { data: l } = await sb.from('livraisons').select('*').eq('id', livraisonId).single();
+  await sb.from('livraisons').update({ livreur_id: livreurId, livreur_nom: livreur.name, statut: 'assignee' }).eq('id', livraisonId);
+  const prods = JSON.parse(l.produits || '[]');
+  const gain = l.nb_produits * 2;
+  const msg = `Bonjour ${livreur.name} 👋\n\nNouvelle livraison pour toi :\n\n👤 Client : ${l.client_nom}\n📞 Tel : ${l.client_tel}\n📍 Adresse : ${l.client_adresse}\n\n📦 Produits :\n${prods.map(p=>`  - ${p.nom} x${p.qte}`).join('\n')}\n\n💰 À encaisser : ${l.total.toFixed(2)} €\n🛵 Ton gain : ${gain} € (${l.nb_produits} produit${l.nb_produits>1?'s':''} × 2 €)\n\nMerci ! 🙏`;
+  const waUrl = `https://wa.me/${livreur.email.includes('06')||livreur.email.includes('07') ? livreur.email : ''}`;
+  document.getElementById(`wa-msg-${livraisonId}`).style.display = 'block';
+  document.getElementById(`wa-msg-${livraisonId}`).innerHTML = `<div class="msg-preview">${msg.replace(/\n/g,'<br>')}</div>
+    <a href="https://wa.me/?text=${encodeURIComponent(msg)}" target="_blank" class="btn btn-wa" style="margin-top:8px;display:inline-block;">💬 Envoyer sur WhatsApp</a>`;
+  toast('Livreur assigné !');
+}
+
+async function marquerLivre(id) {
+  await sb.from('livraisons').update({ statut: 'livre' }).eq('id', id);
+  toast('Livraison marquée comme livrée !');
+  renderLivraisonsAdmin();
+}
+
+// ====== LIVRAISONS LIVREUR ======
+async function loadLivraisonsLivreur() {
+  const { data: livrs } = await sb.from('livraisons').select('*').eq('livreur_id', currentUser.id).in('statut', ['assignee','en_attente']).order('created_at', { ascending: false });
+  const el = document.getElementById('livreur-livraisons');
+  if (!livrs || !livrs.length) { el.innerHTML = '<div class="empty">Aucune livraison assignée pour le moment.</div>'; return; }
+  el.innerHTML = livrs.map(l => {
+    const prods = JSON.parse(l.produits || '[]');
+    const gain = l.nb_produits * 2;
+    const mapsUrl = `https://maps.google.com/?q=${encodeURIComponent(l.client_adresse)}`;
+    const waUrl = `https://wa.me/${l.client_tel.replace(/\s/g,'').replace(/^0/,'33')}`;
+    return `<div class="livr-card">
+      <div class="livr-header">
+        <div>
+          <div class="livr-client">${l.client_nom}</div>
+          <div style="font-size:13px;margin-top:4px;">📞 <a href="tel:${l.client_tel}" style="color:#1d4ed8">${l.client_tel}</a></div>
+        </div>
+        <div class="livr-gain">+${gain} €</div>
+      </div>
+      <div class="livr-info">
+        📍 <strong>${l.client_adresse}</strong><br>
+        💰 À encaisser : <strong>${l.total.toFixed(2)} €</strong>
+      </div>
+      <div style="margin:10px 0;">${prods.map(p=>`<span class="livr-badge">📦 ${p.nom} x${p.qte}</span>`).join('')}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <a href="${mapsUrl}" target="_blank" class="btn btn-blue">🗺️ Itinéraire</a>
+        <a href="${waUrl}" target="_blank" class="btn btn-wa">💬 WhatsApp client</a>
+        <button class="btn btn-green" onclick="livreurMarquerLivre('${l.id}')">✅ J'ai livré</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function livreurMarquerLivre(id) {
+  await sb.from('livraisons').update({ statut: 'livre' }).eq('id', id);
+  toast('Super ! Livraison marquée comme faite.');
+  loadLivraisonsLivreur();
+}
+
+async function renderGainLivreur() {
+  const { data: livrs } = await sb.from('livraisons').select('*').eq('livreur_id', currentUser.id).eq('statut','livre');
+  const el = document.getElementById('livreur-gains');
+  const total = (livrs||[]).reduce((a,l) => a + l.nb_produits * 2, 0);
+  const nbLivr = (livrs||[]).length;
+  el.innerHTML = `<div class="metric-grid">
+    <div class="metric"><div class="metric-label">Total gagné</div><div class="metric-value" style="color:#15803d">${total} €</div></div>
+    <div class="metric"><div class="metric-label">Livraisons faites</div><div class="metric-value">${nbLivr}</div></div>
+  </div>
+  <table>
+    <thead><tr><th>Date</th><th>Client</th><th>Produits</th><th>Gain</th></tr></thead>
+    <tbody>${(livrs||[]).map(l => {
+      const prods = JSON.parse(l.produits||'[]');
+      return `<tr>
+        <td style="font-size:12px;color:#666">${new Date(l.created_at).toLocaleDateString('fr-FR')}</td>
+        <td>${l.client_nom}</td>
+        <td style="font-size:12px">${prods.map(p=>p.nom+' x'+p.qte).join(', ')}</td>
+        <td style="color:#15803d;font-weight:500">+${l.nb_produits*2} €</td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
+}
+
+// ====== DASHBOARD ======
+function renderDashboard() {
+  const ca = ventes.reduce((a,v)=>a+v.total,0);
+  const benef = ventes.reduce((a,v)=>a+v.benef,0);
+  const coutLivr = livraisons.reduce((a,l)=>a+l.nb_produits*2,0);
+  const benefNet = benef - coutLivr;
+  document.getElementById('dash-metrics').innerHTML = `
+    <div class="metric"><div class="metric-label">Chiffre d'affaires</div><div class="metric-value">${ca.toFixed(2)} €</div></div>
+    <div class="metric"><div class="metric-label">Bénéfice net</div><div class="metric-value" style="color:#15803d">${benefNet.toFixed(2)} €</div></div>
+    <div class="metric"><div class="metric-label">Coût livraisons</div><div class="metric-value" style="color:#b91c1c">${coutLivr.toFixed(2)} €</div></div>
+    <div class="metric"><div class="metric-label">Clients</div><div class="metric-value">${clients.length}</div></div>`;
+
+  const lowStock = produits.filter(p => p.stock <= p.alerte);
+  document.getElementById('dash-stock').innerHTML = lowStock.length
+    ? lowStock.map(p => `<div class="alert alert-${p.stock===0?'red':'yellow'}">⚠️ <strong>${p.nom}</strong> — ${p.stock} en stock</div>`).join('')
+    : '<div style="font-size:13px;color:#888;">Tout est OK ✓</div>';
+
+  document.getElementById('dash-ventes').innerHTML = ventes.slice(0,5).map(v =>
+    `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f5f5f5;font-size:13px;">
+      <span>${v.client_nom} — ${JSON.parse(v.produits||'[]').map(p=>p.nom).join(', ')}</span>
+      <strong>${v.total.toFixed(2)} €</strong>
+    </div>`).join('') || '<div class="empty">Aucune vente.</div>';
+}
+
+// ====== ALERTES ======
+function renderAlertes() {
+  const el = document.getElementById('alertes-list');
+  const today = new Date();
+  let html = '';
+  for (const client of clients) {
+    const clientVentes = ventes.filter(v => v.client_id === client.id);
+    for (const v of clientVentes) {
+      const prods = JSON.parse(v.produits || '[]');
+      for (const prod of prods) {
+        const venteDate = new Date(v.created_at);
+        const finDate = new Date(venteDate.getTime() + prod.duree * 86400000);
+        const daysLeft = Math.ceil((finDate - today) / 86400000);
+        if (daysLeft <= 5 && daysLeft >= -5) {
+          const msg = daysLeft > 0
+            ? `Salut ${client.nom.split(' ')[0]} ! 😊 Ton/ta ${prod.nom} se termine dans ${daysLeft} jour${daysLeft>1?'s':''}. Tu veux renouveler ta commande ?`
+            : `Salut ${client.nom.split(' ')[0]} ! 😊 Ton/ta ${prod.nom} est probablement terminé(e). Tu veux commander à nouveau ?`;
+          const waUrl = `https://wa.me/${client.tel.replace(/\s/g,'').replace(/^0/,'33')}?text=${encodeURIComponent(msg)}`;
+          html += `<div class="card" style="margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <strong>${client.nom}</strong>
+              <span class="badge ${daysLeft<=0?'badge-red':'badge-yellow'}">${daysLeft<=0?'Terminé':'Dans '+daysLeft+' jours'}</span>
+            </div>
+            <p style="font-size:13px;color:#666;margin-bottom:8px;">Produit : ${prod.nom}</p>
+            <div class="msg-preview">${msg}</div>
+            <a href="${waUrl}" target="_blank" class="btn btn-wa" style="margin-top:10px;display:inline-block;">💬 Envoyer sur WhatsApp</a>
+          </div>`;
+        }
+      }
+    }
+  }
+  el.innerHTML = html || '<div class="empty">Aucune alerte pour le moment.</div>';
+}
+
+// ====== UTILS ======
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 3000);
+}
+</script>
+</body>
+</html>
