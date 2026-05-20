@@ -1,0 +1,425 @@
+:root {
+  --bg: #f4f6f2;
+  --surface: #ffffff;
+  --ink: #1f2a24;
+  --muted: #617066;
+  --line: #dfe6dd;
+  --accent: #1f7a5b;
+  --accent-dark: #15543f;
+  --danger: #b93b3b;
+  --warn: #a96c16;
+  --shadow: 0 16px 35px rgba(31, 42, 36, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 28px clamp(16px, 4vw, 48px);
+  background: #17251f;
+  color: white;
+}
+
+.eyebrow {
+  margin: 0 0 4px;
+  color: #bed7ca;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 0;
+  font-size: clamp(28px, 4vw, 44px);
+}
+
+h2 {
+  font-size: 20px;
+  margin-bottom: 16px;
+}
+
+h3 {
+  font-size: 16px;
+  margin-bottom: 0;
+}
+
+.top-actions,
+.items-head,
+.block-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+button,
+.import-btn {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+  min-height: 42px;
+}
+
+button:hover,
+.import-btn:hover {
+  border-color: var(--accent);
+}
+
+.primary {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.primary:hover {
+  background: var(--accent-dark);
+}
+
+.danger {
+  color: var(--danger);
+}
+
+.import-btn input {
+  display: none;
+}
+
+.layout {
+  padding: 22px clamp(16px, 4vw, 48px) 48px;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.tab {
+  background: transparent;
+  border-color: transparent;
+}
+
+.tab.active {
+  background: var(--surface);
+  border-color: var(--line);
+  box-shadow: var(--shadow);
+}
+
+.panel {
+  display: none;
+}
+
+.panel.active {
+  display: block;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.stats article,
+.block {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.stats article {
+  padding: 18px;
+}
+
+.stats span,
+.hint,
+small {
+  color: var(--muted);
+}
+
+.stats strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 24px;
+}
+
+.grid {
+  display: grid;
+  gap: 18px;
+}
+
+.grid.two {
+  grid-template-columns: minmax(280px, 0.9fr) minmax(320px, 1.1fr);
+}
+
+.block {
+  padding: 20px;
+}
+
+.block-head {
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.block-head h2 {
+  margin-bottom: 0;
+}
+
+.form {
+  display: grid;
+  gap: 13px;
+  align-content: start;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--ink);
+  background: white;
+}
+
+textarea {
+  resize: vertical;
+}
+
+.hidden,
+[hidden] {
+  display: none !important;
+}
+
+.auth-screen {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: linear-gradient(135deg, #17251f 0%, #254b3b 52%, #f4f6f2 52%, #f4f6f2 100%);
+}
+
+.auth-card {
+  width: min(440px, 100%);
+  display: grid;
+  gap: 15px;
+  padding: 26px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.auth-card h1 {
+  color: var(--ink);
+}
+
+.auth-card .eyebrow {
+  color: var(--accent-dark);
+}
+
+.account-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #eaf3ee;
+}
+
+.form-error {
+  display: none;
+  margin: 0;
+  border: 1px solid #f0c6c6;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #fff2f2;
+  color: var(--danger);
+  font-size: 14px;
+}
+
+.form-error.show {
+  display: block;
+}
+
+.sale-items {
+  display: grid;
+  gap: 10px;
+}
+
+.sale-item {
+  display: grid;
+  grid-template-columns: 1fr 86px 140px auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.total-box,
+.calc-box {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  background: #f8faf7;
+}
+
+.total-box {
+  display: grid;
+  gap: 4px;
+}
+
+.total-box strong {
+  font-size: 26px;
+}
+
+.list {
+  display: grid;
+  gap: 10px;
+}
+
+.empty {
+  color: var(--muted);
+}
+
+.row {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: #fff;
+}
+
+.row-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: start;
+}
+
+.row-title strong {
+  line-height: 1.35;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: #edf4f0;
+  color: var(--accent-dark);
+  padding: 5px 9px;
+}
+
+.tag.warn {
+  background: #fff4df;
+  color: var(--warn);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.actions a,
+.actions button {
+  min-height: 34px;
+  padding: 7px 10px;
+  font-size: 13px;
+  border-radius: 8px;
+  text-decoration: none;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  background: white;
+}
+
+.actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.actions a:hover,
+.actions button:hover {
+  border-color: var(--accent);
+}
+
+.link-button {
+  border: 0;
+  min-height: auto;
+  padding: 0;
+  background: transparent;
+  color: var(--accent-dark);
+  font-weight: 700;
+  text-align: left;
+}
+
+.link-button:hover {
+  border-color: transparent;
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.client-history {
+  margin-top: 18px;
+}
+
+@media (max-width: 900px) {
+  .topbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .stats,
+  .grid.two {
+    grid-template-columns: 1fr;
+  }
+
+  .sale-item {
+    grid-template-columns: 1fr;
+  }
+}
